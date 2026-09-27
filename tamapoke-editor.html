@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TamaPoke Editor</title>
+<style>
+:root{--bg:#f4f1ea;--card:#fffdf8;--ink:#1f1d1a;--muted:#6f6a61;--line:#ddd6c8;--accent:#d2452f;--accent2:#2f6fd2;--ok:#2e8b57;--warn:#b7791f;--field:#fff;}
+@media (prefers-color-scheme:dark){:root{--bg:#16150f;--card:#201f19;--ink:#ece7dc;--muted:#a19b8f;--line:#3a372e;--accent:#ff6b52;--accent2:#6aa2ff;--ok:#5cc58a;--warn:#e3b04b;--field:#2a2922;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+header h1{font-size:18px;margin:0 12px 0 0;letter-spacing:.2px}
+header h1 span{color:var(--accent)}
+button,.btn{font:inherit;border:1px solid var(--line);background:var(--field);color:var(--ink);padding:7px 12px;border-radius:8px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--ink)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.blue{background:var(--accent2);border-color:var(--accent2);color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+.grow{flex:1}
+#status{font-size:13px;color:var(--muted)}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:40px 16px;text-align:center;color:var(--muted);background:var(--card)}
+.drop.over{border-color:var(--accent);color:var(--ink)}
+.drop strong{color:var(--ink);font-size:17px;display:block;margin-bottom:6px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:0 0 16px;overflow:hidden}
+section>h2{margin:0;font-size:15px;padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px 14px;padding:14px}
+.f{display:flex;flex-direction:column;gap:3px;min-width:0}
+.f label{font-size:13px;font-weight:600}
+.f small{font-size:11.5px;color:var(--muted)}
+.f code{font-size:11px;color:var(--muted)}
+.f.changed label::after{content:" ●";color:var(--accent)}
+input[type=number],input[type=text],input[type=date],input[type=datetime-local],select{font:inherit;width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--field);color:var(--ink)}
+input:invalid{border-color:var(--accent)}
+.checks{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px}
+.checks label{font-weight:400;display:flex;gap:4px;align-items:center}
+.row2{display:flex;gap:6px}
+.dexbar{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);align-items:center}
+.dexbar input[type=text]{max-width:220px}
+.dexwrap{max-height:520px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:4px 10px;border-bottom:1px solid var(--line);text-align:left}
+th{position:sticky;top:0;background:var(--card);z-index:1}
+td.c,th.c{text-align:center;width:90px}
+tr.on td:nth-child(2){font-weight:600}
+.pill{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.pill.ok{color:var(--ok);border-color:var(--ok)}
+.pill.bad{color:var(--accent);border-color:var(--accent)}
+#log{white-space:pre-wrap;font:12px/1.4 ui-monospace,Menlo,monospace;padding:10px 14px;max-height:180px;overflow:auto;margin:0;color:var(--muted)}
+.hidden{display:none!important}
+.note{padding:10px 14px;font-size:13px;color:var(--muted);margin:0}
+@media (max-width:600px){header h1{width:100%}.grid{grid-template-columns:1fr}}
+.egg p{margin:0 0 10px}.egg{padding:14px;font-size:14px}.egg table{margin:6px 0 12px}.egg td.n{text-align:right;font-variant-numeric:tabular-nums}.egg tr.cur td{background:color-mix(in srgb,var(--accent) 12%,transparent);font-weight:600}.egg .warn{border-left:3px solid var(--warn);padding:6px 10px;background:color-mix(in srgb,var(--warn) 10%,transparent);border-radius:6px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%}
+.bar.sub{padding-top:8px;margin-top:8px;border-top:1px solid var(--line)}
+header{flex-direction:column;align-items:stretch}
+.tabs{display:flex;gap:4px;background:var(--bg);padding:3px;border-radius:10px;border:1px solid var(--line)}
+.tab{border:0;background:transparent;padding:6px 12px;border-radius:7px}
+.tab.active{background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.15);font-weight:600}
+.intro{margin:0 0 16px;font-size:14px;color:var(--muted)}
+.muted{color:var(--muted);font-weight:400;font-size:12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:14px}
+.tile{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--field);min-width:0}
+.tile b{display:block;font-size:17px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tile span{font-size:12px;color:var(--muted)}
+.cmd{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;padding:10px 14px;border-bottom:1px solid var(--line);align-items:center}
+.cmd:last-child{border-bottom:0}
+.cmd .d b{font-size:14px}.cmd .d code{font-size:11.5px;color:var(--muted);margin-left:6px}
+.cmd .d p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.cmd .a{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.cmd .a input,.cmd .a select{width:auto;max-width:210px}
+.cmd .out{grid-column:1/-1;margin:0;font:12px/1.4 ui-monospace,Menlo,monospace;white-space:pre-wrap;color:var(--ink);background:var(--bg);border-radius:6px;padding:6px 8px}
+.cmd.danger b{color:var(--accent)}
+section.test>h2{color:var(--warn)}
+button.small{padding:3px 8px;font-size:12px}
+button.danger{border-color:var(--accent);color:var(--accent)}
+#term{white-space:pre-wrap;font:12px/1.4 ui-monospace,Menlo,monospace;padding:10px 14px;height:260px;overflow:auto;margin:0;background:var(--bg)}
+#term .tx{color:var(--accent2);font-weight:600}#term .ok{color:var(--ok)}#term .err{color:var(--accent)}#term .lg{color:var(--muted)}
+.termin{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--line)}
+.termin input{font-family:ui-monospace,Menlo,monospace}
+@media (max-width:600px){.cmd{grid-template-columns:1fr}.cmd .a{justify-content:flex-start}}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1>Tama<span>Poke</span> Editor</h1>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="save" role="tab">💾 Save-Datei</button>
+      <button class="tab" data-tab="direct" role="tab">⚡ Direkt am Board</button>
+    </nav>
+    <span class="grow"></span>
+    <span id="conn" class="pill bad">nicht verbunden</span>
+    <button id="connect" class="blue">🔌 Board verbinden</button>
+  </div>
+  <div class="bar sub" data-pane="save">
+    <label class="btn">📂 Datei öffnen<input id="file" type="file" accept=".tamapoke-save,application/octet-stream" hidden></label>
+    <button id="save" class="primary" disabled>💾 Neue Datei speichern</button>
+    <button id="revert" disabled>↺ Verwerfen</button>
+    <span class="grow"></span>
+    <button id="readBoard" disabled>⬇ Vom Board lesen</button>
+    <button id="writeBoard" disabled>⬆ Aufs Board schreiben</button>
+    <span id="status" style="width:100%">Keine Datei geladen.</span>
+  </div>
+  <div class="bar sub hidden" data-pane="direct">
+    <button id="refresh" disabled>🔄 Status lesen</button>
+    <button id="persist" disabled title="Speichert den aktuellen Zustand sofort dauerhaft im Board">📌 Jetzt dauerhaft speichern</button>
+    <span class="grow"></span>
+    <span id="fwInfo" class="pill">Firmware: ?</span>
+  </div>
+</header>
+<main>
+  <div data-pane="save">
+    <div id="drop" class="drop"><strong>Save-Datei hier hineinziehen</strong>oder oben „Datei öffnen“ bzw. „Board verbinden“ → „Vom Board lesen“</div>
+    <div id="editor" class="hidden"></div>
+    <section><h2>Protokoll</h2><pre id="log"></pre></section>
+  </div>
+  <div data-pane="direct" class="hidden">
+    <p class="intro">Hier schickst du Befehle direkt an das laufende Board. Sie wirken sofort. Befehle, die den Spielstand ändern, werden danach automatisch dauerhaft gespeichert. Für größere Umbauten ist der Tab <b>Save-Datei</b> sicherer, weil du vorher alles siehst und ein Backup hast.</p>
+    <section id="statusSec"><h2><span>Board-Status <small id="statusTime" class="muted"></small></span></h2><div id="tiles" class="tiles"><p class="note">Verbinden und „Status lesen“ klicken.</p></div></section>
+    <div id="cmds"></div>
+    <section><h2>Terminal <span class="row2"><label class="checks"><input type="checkbox" id="hideLogs"> nur Befehle &amp; Antworten</label><button id="clearTerm" class="small">Leeren</button></span></h2>
+      <pre id="term"></pre>
+      <form id="termForm" class="termin"><input id="termIn" type="text" autocomplete="off" spellcheck="false" placeholder="Befehl eingeben, z. B. STATS  (↑/↓ = Verlauf)"><button class="primary" id="termSend" disabled>Senden</button></form>
+    </section>
+  </div>
+</main>
+<script>
+"use strict";
+const NAMES = ["?", "Bulbasaur", "Ivysaur", "Venusaur", "Charmander", "Charmeleon", "Charizard", "Squirtle", "Wartortle", "Blastoise", "Caterpie", "Metapod", "Butterfree", "Weedle", "Kakuna", "Beedrill", "Pidgey", "Pidgeotto", "Pidgeot", "Rattata", "Raticate", "Spearow", "Fearow", "Ekans", "Arbok", "Pikachu", "Raichu", "Sandshrew", "Sandslash", "Nidoran♀", "Nidorina", "Nidoqueen", "Nidoran♂", "Nidorino", "Nidoking", "Clefairy", "Clefable", "Vulpix", "Ninetales", "Jigglypuff", "Wigglytuff", "Zubat", "Golbat", "Oddish", "Gloom", "Vileplume", "Paras", "Parasect", "Venonat", "Venomoth", "Diglett", "Dugtrio", "Meowth", "Persian", "Psyduck", "Golduck", "Mankey", "Primeape", "Growlithe", "Arcanine", "Poliwag", "Poliwhirl", "Poliwrath", "Abra", "Kadabra", "Alakazam", "Machop", "Machoke", "Machamp", "Bellsprout", "Weepinbell", "Victreebel", "Tentacool", "Tentacruel", "Geodude", "Graveler", "Golem", "Ponyta", "Rapidash", "Slowpoke", "Slowbro", "Magnemite", "Magneton", "Farfetchd", "Doduo", "Dodrio", "Seel", "Dewgong", "Grimer", "Muk", "Shellder", "Cloyster", "Gastly", "Haunter", "Gengar", "Onix", "Drowzee", "Hypno", "Krabby", "Kingler", "Voltorb", "Electrode", "Exeggcute", "Exeggutor", "Cubone", "Marowak", "Hitmonlee", "Hitmonchan", "Lickitung", "Koffing", "Weezing", "Rhyhorn", "Rhydon", "Chansey", "Tangela", "Kangaskhan", "Horsea", "Seadra", "Goldeen", "Seaking", "Staryu", "Starmie", "Mr. Mime", "Scyther", "Jynx", "Electabuzz", "Magmar", "Pinsir", "Tauros", "Magikarp", "Gyarados", "Lapras", "Ditto", "Eevee", "Vaporeon", "Jolteon", "Flareon", "Porygon", "Omanyte", "Omastar", "Kabuto", "Kabutops", "Aerodactyl", "Snorlax", "Articuno", "Zapdos", "Moltres", "Dratini", "Dragonair", "Dragonite", "Mewtwo", "Mew", "Chikorita", "Bayleef", "Meganium", "Cyndaquil", "Quilava", "Typhlosion", "Totodile", "Croconaw", "Feraligatr", "Sentret", "Furret", "Hoothoot", "Noctowl", "Ledyba", "Ledian", "Spinarak", "Ariados", "Crobat", "Chinchou", "Lanturn", "Pichu", "Cleffa", "Igglybuff", "Togepi", "Togetic", "Natu", "Xatu", "Mareep", "Flaaffy", "Ampharos", "Bellossom", "Marill", "Azumarill", "Sudowoodo", "Politoed", "Hoppip", "Skiploom", "Jumpluff", "Aipom", "Sunkern", "Sunflora", "Yanma", "Wooper", "Quagsire", "Espeon", "Umbreon", "Murkrow", "Slowking", "Misdreavus", "Unown", "Wobbuffet", "Girafarig", "Pineco", "Forretress", "Dunsparce", "Gligar", "Steelix", "Snubbull", "Granbull", "Qwilfish", "Scizor", "Shuckle", "Heracross", "Sneasel", "Teddiursa", "Ursaring", "Slugma", "Magcargo", "Swinub", "Piloswine", "Corsola", "Remoraid", "Octillery", "Delibird", "Mantine", "Skarmory", "Houndour", "Houndoom", "Kingdra", "Phanpy", "Donphan", "Porygon2", "Stantler", "Smeargle", "Tyrogue", "Hitmontop", "Smoochum", "Elekid", "Magby", "Miltank", "Blissey", "Raikou", "Entei", "Suicune", "Larvitar", "Pupitar", "Tyranitar", "Lugia", "Ho-Oh", "Celebi", "Treecko", "Grovyle", "Sceptile", "Torchic", "Combusken", "Blaziken", "Mudkip", "Marshtomp", "Swampert", "Poochyena", "Mightyena", "Zigzagoon", "Linoone", "Wurmple", "Silcoon", "Beautifly", "Cascoon", "Dustox", "Lotad", "Lombre", "Ludicolo", "Seedot", "Nuzleaf", "Shiftry", "Taillow", "Swellow", "Wingull", "Pelipper", "Ralts", "Kirlia", "Gardevoir", "Surskit", "Masquerain", "Shroomish", "Breloom", "Slakoth", "Vigoroth", "Slaking", "Nincada", "Ninjask", "Shedinja", "Whismur", "Loudred", "Exploud", "Makuhita", "Hariyama", "Azurill", "Nosepass", "Skitty", "Delcatty", "Sableye", "Mawile", "Aron", "Lairon", "Aggron", "Meditite", "Medicham", "Electrike", "Manectric", "Plusle", "Minun", "Volbeat", "Illumise", "Roselia", "Gulpin", "Swalot", "Carvanha", "Sharpedo", "Wailmer", "Wailord", "Numel", "Camerupt", "Torkoal", "Spoink", "Grumpig", "Spinda", "Trapinch", "Vibrava", "Flygon", "Cacnea", "Cacturne", "Swablu", "Altaria", "Zangoose", "Seviper", "Lunatone", "Solrock", "Barboach", "Whiscash", "Corphish", "Crawdaunt", "Baltoy", "Claydol", "Lileep", "Cradily", "Anorith", "Armaldo", "Feebas", "Milotic", "Castform", "Kecleon", "Shuppet", "Banette", "Duskull", "Dusclops", "Tropius", "Chimecho", "Absol", "Wynaut", "Snorunt", "Glalie", "Spheal", "Sealeo", "Walrein", "Clamperl", "Huntail", "Gorebyss", "Relicanth", "Luvdisc", "Bagon", "Shelgon", "Salamence", "Beldum", "Metang", "Metagross", "Regirock", "Regice", "Registeel", "Latias", "Latios", "Kyogre", "Groudon", "Rayquaza", "Jirachi", "Deoxys"];
+const DEX_COUNT = 386, DEX_BYTES = 49, SIZE = 304, MAGIC = 0x314B4254;
+const ITEM_NAMES = ["Snack", "Energie", "Pflege", "Training"];
+const GOAL_NAMES = ["Pflegen", "Spielen", "Kämpfen", "Fangen", "Memo"];
+const END_NAMES = ["Keins", "Abschied", "Weggelaufen", "Freigelassen"];
+
+// Feldliste exakt in der Reihenfolge von struct PetBackup (pet.cpp, packed, little endian)
+// [key, typ, label, gruppe, ui, extra]
+const FIELDS = [];
+function F(key,t,label,group,ui,extra){FIELDS.push({key,t,label,group,ui:ui||"num",...(extra||{})});}
+const G = {pet:"Pokémon",stats:"Werte",genes:"Gene & Training",items:"Inventar & Expedition",steps:"Schritte & Bewegung",daily:"Tagesziele, Serie & Zeit",games:"Minispiele & Kämpfe",dex:"Pokédex & Sammlung"};
+F("fullness","u8","Sättigung",G.stats,"num",{max:100});
+F("joy","u8","Freude",G.stats,"num",{max:100});
+F("energy","u8","Energie",G.stats,"num",{max:100});
+F("hygiene","u8","Sauberkeit",G.stats,"num",{max:100});
+F("poops","u8","Häufchen",G.stats);
+F("weight","u8","Gewicht",G.stats);
+F("geneAtk","u8","Gen Angriff",G.genes);
+F("geneDef","u8","Gen Verteidigung",G.genes);
+F("geneSpe","u8","Gen Initiative",G.genes);
+F("trAtk","u8","Training Angriff",G.genes);
+F("trDef","u8","Training Verteidigung",G.genes);
+F("trSpe","u8","Training Initiative",G.genes);
+F("berryKnown","u8","Lieblingsbeere entdeckt",G.pet,"bool");
+F("shiny","u8","Shiny",G.pet,"bool");
+F("eggShiny","u8","Ei ist Shiny",G.pet,"bool");
+F("starterPick","u8","Wartet auf Starter-Wahl",G.pet,"bool",{hint:"nur beim allerersten Spielstart"});
+F("eggTaps","u8","Tipper aufs Ei",G.pet);
+F("careMistakes","u8","Pflegefehler",G.stats);
+F("lastEnd","u8","Ende des vorigen Durchgangs",G.pet,"enum",{opts:END_NAMES,hint:"beeinflusst das nächste Ei – siehe Abschnitt „Nächstes Ei“ unten"});
+F("bond","u8","Bindung",G.stats);
+F("collectionFrame","u8","Sammlungsrahmen",G.dex,"num",{hint:"0 = Basis; zu hohe Werte setzt das Board auf 0 zurück"});
+F("dailyGoalDone","u8","Tagesziele erledigt",G.daily,"mask",{bits:["Ziel 1","Ziel 2","Ziel 3"]});
+F("expeditionRewardItem","u8","Expedition: Belohnung",G.items,"enum",{opts:ITEM_NAMES,none:255,noneLabel:"— keine —"});
+F("stepDailyRewardMask","u8","Schrittziele heute erreicht",G.steps,"mask",{bits:["500","2000","5000"]});
+F("stepMilestoneMask","u8","Schritt-Meilensteine gesamt",G.steps,"mask",{bits:["10k","50k","100k","250k"]});
+F("pendingStepRewardMask","u8","Offene Schritt-Belohnungen",G.steps,"mask",{bits:["500","2000","5000"]});
+F("shakeCountToday","u8","Schütteln heute",G.steps);
+F("walkJoyToday","u8","Freude durch Laufen heute",G.steps);
+F("walkJoyHour","u8","Freude durch Laufen (Stunde)",G.steps);
+F("walkBondToday","u8","Bindung durch Laufen heute",G.steps);
+F("evoDeclinedLv","u8","Entwicklung abgelehnt bei Lv.",G.pet,"num",{hint:"0 = nie abgelehnt"});
+F("speciesId","i16","Aktuelles Pokémon",G.pet,"species",{egg:true});
+F("eggTarget","i16","Ei-Ziel / Herkunftsart",G.pet,"species");
+F("ageMinutes","u32","Alter",G.pet,"minutes");
+F("lastSeenEpoch","u32","Zuletzt gespeichert",G.daily,"epoch");
+F("lastCareDay","u32","Letzter Pflegetag",G.daily,"day");
+F("lastPetInteractMinute","u32","Letztes Streicheln (Alter in Min.)",G.daily,"num");
+F("dailyGoalDay","u32","Tag der Tagesziele",G.daily,"day");
+F("expeditionEndEpoch","u32","Expedition endet",G.items,"epoch",{hint:"0 = keine Expedition"});
+F("stepDay","u32","Tag des Schrittzählers",G.steps,"day");
+F("stepsToday","u32","Schritte heute",G.steps);
+F("stepsTotal","u32","Schritte gesamt",G.steps);
+F("lastMorningDay","u32","Letzter Morgengruß",G.daily,"day");
+F("shakeDay","u32","Tag des Schüttel-Zählers",G.steps,"day");
+F("walkDay","u32","Tag des Lauf-Zählers",G.steps,"day");
+F("walkHour","u32","Stunde des Lauf-Zählers",G.steps,"hour");
+F("evoDeclinedAge","u32","Entwicklung wieder anbieten ab Alter (Min.)",G.pet);
+F("streak","u16","Tagesserie aktuell",G.daily);
+F("bestStreak","u16","Beste Tagesserie",G.daily);
+F("medals","u16","Medaillen aktuell",G.daily);
+F("totalMedals","u16","Medaillen insgesamt",G.daily);
+F("lastMilestone","u16","Zuletzt gefeierter Serien-Meilenstein",G.daily);
+F("gameHi","u16","Highscore Spiel",G.games);
+F("strHi","u16","Highscore Stärke",G.games);
+F("catchHi","u16","Highscore Fangen",G.games);
+F("memoHi","u16","Highscore Memo",G.games);
+F("cleanHi","u16","Highscore Putzen",G.games);
+F("typeHi","u16","Highscore Typen",G.games);
+F("battleWins","u16","Kämpfe gewonnen",G.games);
+F("battleLosses","u16","Kämpfe verloren",G.games);
+F("battleStreak","u16","Siegesserie aktuell",G.games);
+F("bestBattleStreak","u16","Beste Siegesserie",G.games);
+F("dexRewardMask","u16","Abgeholte Dex-Belohnungen",G.dex,"mask",{bits:Array.from({length:16},(_,i)=>"Bit "+i)});
+for(let i=0;i<3;i++)F("goalType"+i,"u8","Tagesziel "+(i+1)+": Art",G.daily,"enum",{opts:GOAL_NAMES});
+for(let i=0;i<3;i++)F("goalProg"+i,"u8","Tagesziel "+(i+1)+": Fortschritt",G.daily);
+for(let i=0;i<4;i++)F("item"+i,"u8",ITEM_NAMES[i],G.items,"num",{max:3,hint:"max. 3"});
+F("dexReg","bits","Aufgezogen",null,"dex");
+F("dexShiny","bits","Shiny aufgezogen",null,"dex");
+F("dexCaught","bits","Gefangen",null,"dex");
+F("nick","str","Spitzname",G.pet,"text",{hint:"max. 11 Zeichen (ASCII)"});
+
+const SZ={u8:1,i16:2,u16:2,u32:4,bits:DEX_BYTES,str:12};
+const MAXV={u8:255,u16:65535,u32:4294967295};
+let off=12; for(const f of FIELDS){f.off=off;off+=SZ[f.t];}
+if(off!==SIZE) throw new Error("Layout-Fehler: "+off);
+
+let original=null, data=null, fileName="tamapoke-save";
+const $=id=>document.getElementById(id);
+const log=m=>{const l=$("log");l.textContent+=new Date().toLocaleTimeString()+"  "+m+"\n";l.scrollTop=l.scrollHeight;};
+const status=(m)=>{$("status").textContent=m;};
+
+function fnv(bytes){let v=2166136261>>>0;for(const x of bytes){v=Math.imul(v^x,16777619)>>>0;}return v;}
+function checksumOf(buf){const c=buf.slice();c[8]=c[9]=c[10]=c[11]=0;return fnv(c);}
+function dv(){return new DataView(data.buffer);}
+function getv(f){const d=dv();switch(f.t){case"u8":return d.getUint8(f.off);case"i16":return d.getInt16(f.off,true);case"u16":return d.getUint16(f.off,true);case"u32":return d.getUint32(f.off,true);case"str":{let s="";for(let i=0;i<12;i++){const c=data[f.off+i];if(!c)break;s+=String.fromCharCode(c);}return s;}}}
+function setv(f,v){const d=dv();switch(f.t){case"u8":d.setUint8(f.off,v);break;case"i16":d.setInt16(f.off,v,true);break;case"u16":d.setUint16(f.off,v,true);break;case"u32":d.setUint32(f.off,v>>>0,true);break;case"str":{for(let i=0;i<12;i++)data[f.off+i]=i<v.length&&i<11?v.charCodeAt(i)&0x7f:0;}}}
+function bit(f,i){return (data[f.off+(i>>3)]>>(i&7))&1;}
+function setBit(f,i,on){const o=f.off+(i>>3);data[o]=on?data[o]|(1<<(i&7)):data[o]&~(1<<(i&7));}
+
+function validate(buf){
+  if(buf.length!==SIZE) return "Falsche Größe: "+buf.length+" Bytes (erwartet "+SIZE+")";
+  const d=new DataView(buf.buffer,buf.byteOffset,buf.length);
+  if(d.getUint32(0,true)!==MAGIC) return "Keine TamaPoke-Save-Datei (Kennung fehlt)";
+  if(d.getUint16(4,true)!==1) return "Unbekannte Format-Version "+d.getUint16(4,true);
+  if(d.getUint16(6,true)!==SIZE) return "Längenfeld passt nicht";
+  if(d.getUint32(8,true)!==checksumOf(buf)) return "Prüfsumme falsch – Datei beschädigt";
+  return null;
+}
+function problems(){
+  const p=[];const g=k=>getv(FIELDS.find(f=>f.key===k));
+  const s=g("speciesId"),e=g("eggTarget"),r=g("expeditionRewardItem");
+  if(s<-1||s>DEX_COUNT||s===0)p.push("Aktuelles Pokémon ungültig");
+  if(e<1||e>DEX_COUNT)p.push("Ei-Ziel muss 1–386 sein");
+  if(r!==255&&r>3)p.push("Expeditions-Belohnung ungültig");
+  return p;
+}
+function finalize(){const d=dv();d.setUint32(0,MAGIC,true);d.setUint16(4,1,true);d.setUint16(6,SIZE,true);d.setUint32(8,checksumOf(data),true);return data.slice();}
+
+// ---------- Datumshelfer ----------
+const pad=n=>String(n).padStart(2,"0");
+function dayToStr(d){if(!d)return"";const t=new Date(d*86400000);return t.getUTCFullYear()+"-"+pad(t.getUTCMonth()+1)+"-"+pad(t.getUTCDate());}
+function strToDay(s){return s?Math.floor(Date.parse(s+"T00:00:00Z")/86400000):0;}
+function epochToLocal(e){if(!e)return"";const t=new Date(e*1000);return t.getUTCFullYear()+"-"+pad(t.getUTCMonth()+1)+"-"+pad(t.getUTCDate())+"T"+pad(t.getUTCHours())+":"+pad(t.getUTCMinutes());}
+function localToEpoch(s){return s?Math.floor(Date.parse(s+":00Z")/1000):0;}
+
+// ---------- Oberfläche ----------
+function speciesOptions(egg){let h=egg?'<option value="-1">Ei (-1)</option>':"";for(let i=1;i<=DEX_COUNT;i++)h+=`<option value="${i}">#${i} ${NAMES[i]}</option>`;return h;}
+function build(){
+  const ed=$("editor");ed.innerHTML="";
+  const groups=[...new Set(FIELDS.filter(f=>f.group).map(f=>f.group))];
+  const order=[G.pet,G.stats,G.genes,G.items,G.steps,G.daily,G.games,G.dex];
+  for(const gname of order.filter(x=>groups.includes(x))){
+    const sec=document.createElement("section");sec.innerHTML=`<h2>${gname}</h2><div class="grid"></div>`;
+    const grid=sec.querySelector(".grid");
+    for(const f of FIELDS.filter(x=>x.group===gname)){const el=document.createElement("div");el.className="f";el.dataset.key=f.key;el.innerHTML=fieldHtml(f);grid.appendChild(el);wire(f,el);}
+    ed.appendChild(sec);
+  }
+  ed.appendChild(eggSection());
+  ed.appendChild(dexSection());
+  ed.classList.remove("hidden");$("drop").classList.add("hidden");
+}
+function fieldHtml(f){
+  const hint=f.hint?`<small>${f.hint}</small>`:"";const lab=`<label>${f.label}</label>`;const code=`<code>${f.key}</code>`;
+  const max=f.max??MAXV[f.t]??0;
+  switch(f.ui){
+    case"bool":return `<div class="checks"><label><input type="checkbox" data-in>${f.label}</label></div>${hint}${code}`;
+    case"enum":{let o=f.opts.map((n,i)=>`<option value="${i}">${i} – ${n}</option>`).join("");if(f.none!==undefined)o=`<option value="${f.none}">${f.noneLabel}</option>`+o;return lab+`<select data-in>${o}</select>`+hint+code;}
+    case"species":return lab+`<select data-in>${speciesOptions(f.egg)}</select>`+hint+code;
+    case"mask":return lab+`<div class="checks">${f.bits.map((b,i)=>`<label><input type="checkbox" data-bit="${i}">${b}</label>`).join("")}</div>`+hint+code;
+    case"day":return lab+`<div class="row2"><input type="date" data-in><input type="number" data-raw min="0" max="${max}" title="Tage seit 1.1.1970"></div><small>Datum · Rohwert = Tage seit 1970</small>`+code;
+    case"epoch":return lab+`<div class="row2"><input type="datetime-local" data-in><input type="number" data-raw min="0" max="${max}" title="Unix-Zeit"></div><small>${f.hint||"Board-Uhrzeit · Rohwert = Sekunden"}</small>`+code;
+    case"hour":return lab+`<div class="row2"><input type="number" data-in min="0" max="${max}"></div><small data-hr></small>`+code;
+    case"minutes":return lab+`<input type="number" data-in min="0" max="${max}"><small data-hr></small>`+code;
+    case"text":return lab+`<input type="text" data-in maxlength="11" pattern="[\\x20-\\x7E]*">`+hint+code;
+    default:return lab+`<input type="number" data-in min="${f.t==="i16"?-32768:0}" max="${max}">`+hint+code;
+  }
+}
+function wire(f,el){
+  const inp=el.querySelector("[data-in]"),raw=el.querySelector("[data-raw]"),hr=el.querySelector("[data-hr]");
+  const clampNum=(v)=>{v=Math.round(Number(v)||0);const mx=f.max??MAXV[f.t];return Math.max(f.t==="i16"?-32768:0,Math.min(mx,v));};
+  const refresh=()=>{
+    const v=getv(f);
+    if(f.ui==="bool")inp.checked=!!v;
+    else if(f.ui==="mask")el.querySelectorAll("[data-bit]").forEach(c=>c.checked=!!((v>>c.dataset.bit)&1));
+    else if(f.ui==="day"){inp.value=dayToStr(v);raw.value=v;}
+    else if(f.ui==="epoch"){inp.value=epochToLocal(v);raw.value=v;}
+    else inp.value=v;
+    if(hr){if(f.ui==="minutes")hr.textContent=`= ${Math.floor(v/1440)} Tage, ${Math.floor(v%1440/60)} Std., ${v%60} Min.`;else hr.textContent=v?"= "+new Date(v*3600000).toLocaleString("de-DE",{timeZone:"UTC"})+" (Board-Zeit)":"";}
+    const o=new DataView(original.buffer);const ov=f.t==="str"?null:(f.t==="u8"?o.getUint8(f.off):f.t==="i16"?o.getInt16(f.off,true):f.t==="u16"?o.getUint16(f.off,true):o.getUint32(f.off,true));
+    let changed;if(f.t==="str"){changed=false;for(let i=0;i<12;i++)if(original[f.off+i]!==data[f.off+i])changed=true;}else changed=ov!==v;
+    el.classList.toggle("changed",changed);
+  };
+  el._refresh=refresh;
+  const commit=v=>{setv(f,v);refresh();onChange();};
+  if(f.ui==="bool")inp.onchange=()=>commit(inp.checked?1:0);
+  else if(f.ui==="mask")el.querySelectorAll("[data-bit]").forEach(c=>c.onchange=()=>{let v=0;el.querySelectorAll("[data-bit]").forEach(x=>{if(x.checked)v|=1<<x.dataset.bit;});commit(v);});
+  else if(f.ui==="day"){inp.onchange=()=>commit(strToDay(inp.value));raw.onchange=()=>commit(clampNum(raw.value));}
+  else if(f.ui==="epoch"){inp.onchange=()=>commit(localToEpoch(inp.value));raw.onchange=()=>commit(clampNum(raw.value));}
+  else if(f.ui==="text")inp.oninput=()=>commit(inp.value.replace(/[^\x20-\x7E]/g,"").slice(0,11));
+  else if(f.ui==="enum"||f.ui==="species")inp.onchange=()=>commit(Number(inp.value));
+  else inp.onchange=()=>commit(clampNum(inp.value));
+  refresh();
+}
+function dexSection(){
+  const dexF=FIELDS.filter(f=>f.ui==="dex");
+  const sec=document.createElement("section");
+  sec.innerHTML=`<h2>Pokédex <span class="pill" id="dexCount"></span></h2>
+  <div class="dexbar"><input type="text" id="dexSearch" placeholder="Suchen: Name oder Nr.">
+  <label class="checks"><input type="checkbox" id="dexOnly"> nur markierte</label>
+  <span class="grow"></span>
+  ${dexF.map((f,i)=>`<select data-bulk="${i}"><option value="">${f.label}: alle…</option><option value="1">alle an</option><option value="0">alle aus</option></select>`).join("")}</div>
+  <div class="dexwrap"><table><thead><tr><th>Nr.</th><th>Pokémon</th>${dexF.map(f=>`<th class="c">${f.label}</th>`).join("")}</tr></thead><tbody id="dexBody"></tbody></table></div>`;
+  const body=sec.querySelector("#dexBody");
+  let rows="";for(let i=0;i<DEX_COUNT;i++)rows+=`<tr data-i="${i}"><td>${i+1}</td><td>${NAMES[i+1]}</td>${dexF.map((f,k)=>`<td class="c"><input type="checkbox" data-k="${k}"></td>`).join("")}</tr>`;
+  body.innerHTML=rows;
+  const paint=()=>{
+    const q=sec.querySelector("#dexSearch").value.trim().toLowerCase(),only=sec.querySelector("#dexOnly").checked;
+    body.querySelectorAll("tr").forEach(tr=>{const i=+tr.dataset.i;let any=false;
+      tr.querySelectorAll("input").forEach(c=>{const v=bit(dexF[c.dataset.k],i);c.checked=!!v;if(v)any=true;});
+      tr.classList.toggle("on",any);
+      const match=!q||String(i+1)===q||NAMES[i+1].toLowerCase().includes(q);
+      tr.classList.toggle("hidden",!match||(only&&!any));});
+    const cnt=dexF.map(f=>{let n=0;for(let i=0;i<DEX_COUNT;i++)n+=bit(f,i);return f.label+" "+n;});
+    sec.querySelector("#dexCount").textContent=cnt.join(" · ");
+  };
+  body.onchange=e=>{const c=e.target;if(!c.dataset.k)return;setBit(dexF[c.dataset.k],+c.closest("tr").dataset.i,c.checked);paint();onChange();};
+  sec.querySelector("#dexSearch").oninput=paint;sec.querySelector("#dexOnly").onchange=paint;
+  sec.querySelectorAll("[data-bulk]").forEach(s=>s.onchange=()=>{if(s.value==="")return;const f=dexF[s.dataset.bulk];for(let i=0;i<DEX_COUNT;i++)setBit(f,i,s.value==="1");s.value="";paint();onChange();});
+  sec._refresh=paint;paint();
+  return sec;
+}
+function refreshAll(){document.querySelectorAll(".f").forEach(el=>el._refresh&&el._refresh());document.querySelectorAll("section").forEach(s=>s._refresh&&s._refresh());onChange();}
+function onChange(){
+  const eb=document.getElementById("eggBox");if(eb)eb.parentElement._refresh();
+  let n=0;for(let i=12;i<SIZE;i++)if(original[i]!==data[i])n++;
+  const p=problems();
+  status((n?`${n} Byte(s) geändert. `:"Keine Änderungen. ")+(p.length?"⚠ "+p.join(", "):"Werte gültig."));
+  $("save").disabled=!!p.length;$("revert").disabled=!n;updateSerialUi();
+}
+function load(buf,name){
+  const err=validate(buf);if(err){alert(err);log("Laden fehlgeschlagen: "+err);return;}
+  original=buf.slice();data=buf.slice();fileName=(name||"tamapoke-save").replace(/\.tamapoke-save$/,"");
+  build();refreshAll();log(`Geladen: ${name||"vom Board"} (${buf.length} Bytes, Prüfsumme ok)`);
+}
+function download(bytes,name){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([bytes],{type:"application/octet-stream"}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
+const stamp=()=>{const t=new Date();return t.getFullYear()+pad(t.getMonth()+1)+pad(t.getDate())+"-"+pad(t.getHours())+pad(t.getMinutes());};
+
+$("file").onchange=async e=>{const f=e.target.files[0];if(f)load(new Uint8Array(await f.arrayBuffer()),f.name);e.target.value="";};
+const drop=$("drop");
+["dragenter","dragover"].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
+["dragleave","drop"].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
+document.addEventListener("drop",async e=>{const f=e.dataTransfer.files[0];if(f)load(new Uint8Array(await f.arrayBuffer()),f.name);});
+$("save").onclick=()=>{const out=finalize();const n=`${fileName}-edit-${stamp()}.tamapoke-save`;download(out,n);log("Gespeichert: "+n+" (Prüfsumme 0x"+new DataView(out.buffer).getUint32(8,true).toString(16).toUpperCase()+")");};
+$("revert").onclick=()=>{if(confirm("Alle Änderungen verwerfen?")){data=original.slice();refreshAll();}};
+
+
+// ---------- Nächstes Ei (Formeln aus pet.cpp: newEgg / pickEggSpecies / careBonus) ----------
+function eggOdds(end,streak,bond,registered){
+  const cb=Math.floor(Math.min(streak,30)/3)+Math.floor(Math.min(bond,100)/25);
+  let leg=0,rare=0;
+  if(end!==2){const blessed=end===1;rare=(blessed?45:27)+cb;leg=registered>=25?(blessed?10:3)+Math.floor(cb/3):0;}
+  leg=Math.min(leg,100);rare=Math.max(0,Math.min(rare,100-leg));
+  const shinyN=Math.max(8,(end===1?24:48)-cb);
+  return {cb,leg,rare,common:100-leg-rare,shinyN};
+}
+function eggSection(){
+  const sec=document.createElement("section");
+  sec.innerHTML=`<h2>Nächstes Ei – wie wirkt „Ende des vorigen Durchgangs“?</h2><div class="egg" id="eggBox"></div>`;
+  const box=sec.querySelector("#eggBox");
+  sec._refresh=()=>{
+    const g=k=>getv(FIELDS.find(f=>f.key===k));
+    const streak=g("streak"),bond=g("bond"),cur=g("lastEnd");
+    let reg=0;const df=FIELDS.find(f=>f.key==="dexReg");for(let i=0;i<DEX_COUNT;i++)reg+=bit(df,i);
+    const rows=[[1,"Abschied"],[3,"Freigelassen"],[0,"Keins (nur erstes Ei)"],[2,"Weggelaufen"]].map(([e,n])=>{const o=eggOdds(e,streak,bond,reg);
+      return `<tr class="${e===cur?"cur":""}"><td>${e} – ${n}</td><td class="n">${o.common} %</td><td class="n">${o.rare} %</td><td class="n">${o.leg} %</td><td class="n">1 : ${o.shinyN}</td></tr>`;}).join("");
+    const cb=eggOdds(0,streak,bond,reg).cb;
+    box.innerHTML=`
+<p>Wenn dein Pokémon geht, schlüpft danach ein neues Ei. Beim Erzeugen dieses Eis würfelt das Spiel zwei Dinge aus: die <b>Seltenheitsstufe</b> (häufig / selten / legendär) und ob das Ei <b>Shiny</b> wird. Wie der vorige Durchgang endete, verändert dabei die Chancen:</p>
+<ul>
+<li><b>Abschied</b> – du hast dein voll entwickeltes Pokémon nach mindestens 3 Spieltagen verabschiedet. Das ist der „gesegnete“ Weg: deutlich mehr Chance auf seltene und legendäre Eier, und die Shiny-Chance ist doppelt so hoch.</li>
+<li><b>Freigelassen</b> – normale Chancen, kein Bonus und keine Strafe.</li>
+<li><b>Weggelaufen</b> – das Pokémon wurde eine Stunde lang komplett vernachlässigt. Strafe: das nächste Ei ist <b>garantiert häufig</b>. Die Shiny-Chance bleibt normal.</li>
+</ul>
+<p>Zusätzlich gibt es einen <b>Pflegebonus</b> = Tagesserie ÷ 3 (max. 10) + Bindung ÷ 25 (max. 4). Er erhöht die Chance auf seltene Eier, ein Drittel davon die auf legendäre, und verbessert die Shiny-Chance bis höchstens 1 : 8. Legendäre Eier gibt es erst, wenn mindestens 25 Pokémon aufgezogen sind. Innerhalb der Stufe bevorzugt das Spiel Arten aus Entwicklungsreihen, die du noch nicht vollständig hast.</p>
+<p>Mit deinen aktuellen Werten (Serie ${streak}, Bindung ${bond}, ${reg} aufgezogen) ist der Pflegebonus <b>${cb}</b>${reg<25?" – legendäre Eier sind noch gesperrt":""}:</p>
+<table><thead><tr><th>Ende</th><th class="n">Häufig</th><th class="n">Selten</th><th class="n">Legendär</th><th class="n">Shiny</th></tr></thead><tbody>${rows}</tbody></table>
+<p class="warn"><b>Wichtig:</b> Diesen Wert zu ändern bringt praktisch nichts. Das Spiel überschreibt ihn in dem Moment, in dem die nächste Verabschiedung, Freilassung oder Flucht beginnt, und würfelt das Ei erst direkt danach. Dein aktuelles Pokémon und sein Ei sind längst ausgewürfelt. Was du dauerhaft beeinflussen kannst, sind <b>Tagesserie</b> und <b>Bindung</b> (Pflegebonus) und, indem du dein Pokémon am Ende verabschiedest statt es freizulassen.</p>`;
+  };
+  sec._refresh();return sec;
+}
+
+// ---------- Tabs ----------
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===t));
+  document.querySelectorAll("[data-pane]").forEach(p=>p.classList.toggle("hidden",p.dataset.pane!==t.dataset.tab));
+});
+
+// ---------- USB (Web Serial) – eine Verbindung für beide Tabs ----------
+let port,reader,writer,busy=false,rx="",queue=[],capturing=false,waiter=null;
+const serialOk="serial" in navigator, enc=new TextEncoder(), dec=new TextDecoder();
+let testFw=null;
+function updateSerialUi(){
+  const c=!!writer;
+  $("connect").disabled=!serialOk||busy;$("connect").textContent=c?"🔌 Trennen":"🔌 Board verbinden";
+  $("conn").textContent=c?(busy?"beschäftigt…":"verbunden"):"nicht verbunden";$("conn").className="pill "+(c?"ok":"bad");
+  $("readBoard").disabled=!c||busy;$("writeBoard").disabled=!c||busy||!data||problems().length>0;
+  $("refresh").disabled=$("persist").disabled=$("termSend").disabled=!c||busy;
+  document.querySelectorAll("[data-run]").forEach(b=>b.disabled=!c||busy);
+}
+if(!serialOk)log("Dieser Browser kann nicht per USB verbinden. Nutze Chrome oder Edge am Computer – Datei öffnen/speichern geht trotzdem.");
+
+// Terminal
+const TERM_MAX=1500;
+function term(text,cls){
+  const t=$("term");const line=document.createElement("div");line.className=cls||"";
+  line.textContent=text.startsWith("SAVEHEX ")?"SAVEHEX … ("+(text.length-8)/2+" Bytes)":text;
+  if(cls==="lg"&&$("hideLogs").checked)line.hidden=true;
+  const stick=t.scrollTop+t.clientHeight>=t.scrollHeight-20;
+  t.appendChild(line);while(t.childNodes.length>TERM_MAX)t.firstChild.remove();
+  if(stick)t.scrollTop=t.scrollHeight;
+}
+$("hideLogs").onchange=()=>$("term").querySelectorAll(".lg").forEach(l=>l.hidden=$("hideLogs").checked);
+$("clearTerm").onclick=()=>{$("term").textContent="";};
+
+async function pump(){
+  const r=reader;
+  try{
+    while(reader===r){
+      const {value,done}=await r.read();if(done)break;
+      rx+=dec.decode(value,{stream:true});
+      let i;while((i=rx.indexOf("\n"))>=0){const l=rx.slice(0,i).trim();rx=rx.slice(i+1);if(l)onLine(l);}
+    }
+  }catch(e){if(reader===r)log("USB-Lesefehler: "+e.message);}
+  if(reader===r){await disconnect();log("Verbindung zum Board getrennt.");}
+}
+function onLine(l){
+  term(l,capturing?(l==="DONE"||l==="OK"?"ok":l==="ERR"?"err":""):"lg");
+  if(capturing){queue.push(l);if(waiter){const w=waiter;waiter=null;w();}}
+}
+async function nextLine(deadline){
+  while(!queue.length){
+    const left=deadline-Date.now();
+    if(left<=0)throw new Error("Board antwortet nicht");
+    if(!writer)throw new Error("Nicht verbunden");
+    await new Promise(res=>{waiter=res;setTimeout(res,left);});
+  }
+  return queue.shift();
+}
+async function expect(re,ms){const end=Date.now()+ms;while(true){const l=await nextLine(end);if(l==="ERR")return null;const m=re.exec(l);if(m)return m;}}
+async function sendLine(cmd){queue=[];capturing=true;term("› "+cmd,"tx");await writer.write(enc.encode(cmd+"\n"));}
+async function sendBytes(b){await writer.write(b);}
+// Führt Befehle nacheinander exklusiv aus
+async function exclusive(fn){
+  if(!writer)throw new Error("Nicht verbunden");
+  if(busy)throw new Error("Board ist beschäftigt");
+  busy=true;updateSerialUi();
+  try{return await fn();}finally{capturing=false;queue=[];busy=false;updateSerialUi();}
+}
+// Befehl senden, alle Antwortzeilen bis DONE einsammeln
+async function command(cmd,ms=5000){
+  return exclusive(async()=>{
+    await sendLine(cmd);const lines=[];const end=Date.now()+ms;
+    while(true){const l=await nextLine(end);if(l==="DONE")return lines;if(l==="ERR")throw new Error("Board meldet ERR");lines.push(l);}
+  });
+}
+async function disconnect(){
+  const r=reader,w=writer,p=port;port=reader=writer=undefined;rx="";capturing=false;queue=[];
+  if(waiter){const x=waiter;waiter=null;x();}
+  try{r&&await r.cancel();}catch{}try{r&&r.releaseLock();}catch{}try{w&&w.releaseLock();}catch{}try{p&&await p.close();}catch{}
+  updateSerialUi();
+}
+$("connect").onclick=async()=>{
+  if(writer){await disconnect();log("Getrennt.");return;}
+  try{
+    port=await navigator.serial.requestPort();await port.open({baudRate:115200});
+    reader=port.readable.getReader();writer=port.writable.getWriter();rx="";
+    log("Verbunden.");term("— verbunden —","ok");pump();
+    updateSerialUi();
+    refreshStatus().catch(()=>{});
+  }catch(e){
+    log("Verbinden fehlgeschlagen: "+e.message);
+    if(/permissions policy/i.test(e.message))log("→ Der Editor läuft gerade in einer Vorschau. Lade die HTML-Datei herunter und öffne sie direkt in Chrome oder Edge (Doppelklick auf die Datei), dann klappt USB.");
+    await disconnect();
+  }
+  updateSerialUi();
+};
+
+// ---------- Save-Protokoll (SAVEGET / SAVEPUT) ----------
+async function boardGet(){
+  return exclusive(async()=>{
+    await sendLine("SAVEGET");
+    const h=await expect(/^SAVE (\d+)$/,6000);if(!h)throw new Error("Board lehnt Backup ab (Firmware älter als 1.36.1?)");
+    const size=+h[1];const x=await expect(/^SAVEHEX ([0-9A-F]+)$/,10000);if(!x||x[1].length!==size*2)throw new Error("Backup-Daten unvollständig");
+    const out=new Uint8Array(size);for(let i=0;i<size;i++)out[i]=parseInt(x[1].substr(i*2,2),16);
+    if(!await expect(/^DONE$/,6000))throw new Error("Backup nicht abgeschlossen");
+    const err=validate(out);if(err)throw new Error(err);return out;
+  });
+}
+async function backupToDisk(suffix){const b=await boardGet();download(b,`tamapoke-save-${suffix}-${stamp()}.tamapoke-save`);return b;}
+$("readBoard").onclick=async()=>{
+  if(data&&!$("revert").disabled&&!confirm("Ungespeicherte Änderungen gehen verloren. Trotzdem vom Board lesen?"))return;
+  try{log("Lese Spielstand vom Board…");const b=await backupToDisk("board");log("Kopie heruntergeladen.");load(b,"Board");}
+  catch(e){log("Fehler: "+e.message);}
+};
+$("writeBoard").onclick=async()=>{
+  const p=problems();if(p.length){alert(p.join("\n"));return;}
+  try{
+    log("Sicherheits-Backup vom Board…");await backupToDisk("vor-restore");log("Sicherheits-Backup heruntergeladen.");
+    if(!confirm("Den bearbeiteten Spielstand aufs Board schreiben? Der aktuelle Stand wird überschrieben und das Board startet neu."))throw new Error("abgebrochen");
+    const out=finalize();
+    await exclusive(async()=>{
+      await sendLine(`SAVEPUT ${out.length}`);
+      if(!await expect(/^OK$/,6000))throw new Error("Board lehnt Schreiben ab");
+      await sendBytes(out);
+      if(!await expect(/^DONE$/,10000))throw new Error("Board hat die Datei abgelehnt (Prüfung fehlgeschlagen)");
+    });
+    log("✅ Fertig! Das Board startet neu.");original=out.slice();refreshAll();await disconnect();
+  }catch(e){log("Fehler: "+e.message);}
+};
+
+// ---------- Direkt-Tab: Status ----------
+const dexName=n=>(n>=1&&n<=DEX_COUNT)?`#${n} ${NAMES[n]}`:"Ei";
+const boardTime=e=>e?new Date(e*1000).toLocaleString("de-DE",{timeZone:"UTC",dateStyle:"medium",timeStyle:"short"}):"nicht gestellt";
+const pcBoardEpoch=()=>Math.floor((Date.now()-new Date().getTimezoneOffset()*60000)/1000); // Board rechnet in Ortszeit ohne Zeitzone
+function parseKV(lines){
+  const m={};
+  for(const l of lines){
+    const tok=l.split(/\s+/);let pre="";
+    if(tok.length&&!tok[0].includes("=")){pre=tok.shift()+"_";}
+    for(const t of tok){const i=t.indexOf("=");if(i>0)m[pre+t.slice(0,i)]=t.slice(i+1);}
+  }
+  return m;
+}
+const TILE_GROUPS=[
+  ["Pokémon",[["spec","Pokémon",v=>dexName(+v)],["nv","Level"],["nick","Spitzname",v=>v||"—"],["shiny","Shiny",v=>v==="1"?"✨ ja":"nein"],["egg","Ei",v=>v==="1"?"ja":"nein"],["age","Alter",v=>`${Math.floor(v/1440)} T ${Math.floor(v%1440/60)} Std`]]],
+  ["Werte",[["com","Sättigung"],["fel","Freude"],["ene","Energie"],["lim","Sauberkeit"],["desc","Pflegefehler"],["peso","Gewicht"],["bond","Bindung"],["baya","Beere entdeckt",v=>v==="1"?"ja":"nein"]]],
+  ["Kampfwerte",[["fue","Angriff"],["def","Verteidigung"],["vel","Initiative"],["genes","Gene A/V/I"],["tr","Training A/V/I"]]],
+  ["Fortschritt",[["streak","Tagesserie akt./beste"],["medals","Medaillen",v=>{const m=/\((\d+)\)/.exec(v);return m?m[1]+" gesamt":v;}],["steps","Schritte heute/gesamt"],["trail","Wander-Rang"],["shinyLuck","Shiny-Glück (Schritte)"],["catchBonus","Fangbonus"],["battle_wins","Siege"],["battle_losses","Niederlagen"],["battle_best","Beste Siegesserie"]]],
+  ["Board",[["fw","Firmware"],["rtc","Board-Uhr",v=>boardTime(+v)],["bat","Akku",v=>v+" %"],["usb","USB-Strom",v=>v==="1"?"ja":"nein"],["sd","SD-Karte",v=>v==="1"?"ok":"fehlt"],["mon","Sprite geladen",v=>v==="1"?"ja":"nein"],["save","Spielstand",v=>v==="loaded"?"geladen":"neu"]]],
+];
+let lastStatus={};
+async function refreshStatus(){
+  const a=await command("SAVEINFO"),b=await command("STATS");
+  const m=parseKV([...a,...b]);lastStatus=m;
+  testFw=m.fw?/local/i.test(m.fw):null;
+  $("fwInfo").textContent="Firmware: "+(m.fw||"?")+(testFw?" (Test-Build)":"");
+  let h="";
+  for(const [g,items] of TILE_GROUPS){
+    const cells=items.filter(([k])=>m[k]!==undefined).map(([k,l,f])=>`<div class="tile"><span>${l}</span><b>${esc(f?f(m[k]):m[k])}</b></div>`).join("");
+    if(cells)h+=`<div style="grid-column:1/-1;font-size:12px;font-weight:600;color:var(--muted);margin-top:4px">${g}</div>`+cells;
+  }
+  $("tiles").innerHTML=h||'<p class="note">Keine Statusdaten erhalten.</p>';
+  $("statusTime").textContent="· gelesen "+new Date().toLocaleTimeString("de-DE");
+  document.querySelectorAll("[data-test]").forEach(s=>s.querySelector(".testnote").textContent=testFw?"Deine Firmware ist ein Test-Build – diese Befehle sind verfügbar.":"Deine Firmware ist kein Test-Build – das Board ignoriert diese Befehle wahrscheinlich.");
+  const ck=document.querySelector('[data-clockinfo]');if(ck)ck.textContent=`Board: ${boardTime(+m.rtc)} · PC: ${boardTime(pcBoardEpoch())}`;
+  return m;
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+$("refresh").onclick=()=>refreshStatus().catch(e=>alert("Status lesen fehlgeschlagen: "+e.message));
+// TIME <aktuelle Board-Zeit> ruft setClock() auf, das sofort alles in den Flash speichert
+async function persistNow(){
+  const l=await command("TIME");const m=/rtc=(\d+)/.exec(l.join(" "));
+  if(!m||m[1]==="0")throw new Error("Board-Uhr ist nicht gestellt – stell zuerst die Uhr.");
+  await command("TIME "+m[1]);
+}
+$("persist").onclick=async()=>{try{await persistNow();term("✓ dauerhaft gespeichert","ok");}catch(e){alert(e.message);}};
+
+// ---------- Direkt-Tab: Befehle ----------
+// arg-Typen: species, num, text, datetime
+const CMDS=[
+ {sec:"Uhr",items:[
+  {id:"clocknow",label:"Uhr auf PC-Zeit stellen",desc:"Stellt die Board-Uhr auf deine aktuelle Ortszeit. Speichert dabei sofort. Achtung: Ein großer Zeitsprung kann die Tagesserie beenden.",build:()=>"TIME "+pcBoardEpoch(),info:true},
+  {id:"clockset",label:"Uhr auf bestimmte Zeit stellen",desc:"Freie Zeit (Board-Zeit). Speichert sofort.",args:[{t:"datetime"}],build:a=>"TIME "+localToEpoch(a[0])},
+  {id:"rtcset",label:"Nur Hardware-Uhr stellen",desc:"Setzt nur den RTC-Chip, nicht die Spiel-Uhr. Beim nächsten Neustart wird die vergangene Zeit als Offline-Zeit angerechnet (max. 14 Tage). Eher zum Testen.",args:[{t:"datetime"}],build:a=>"RTCSET "+localToEpoch(a[0]),confirm:"Nur die Hardware-Uhr stellen? Beim Neustart wird die Differenz als Offline-Zeit angerechnet."},
+  {id:"time",label:"Uhrzeit abfragen",cmd:"TIME",show:l=>{const m=/rtc=(\d+)/.exec(l.join(" "));return m?"Board-Uhr: "+boardTime(+m[1]):l.join("\n");}},
+ ]},
+ {sec:"Pokémon",items:[
+  {id:"spec",label:"Pokémon ändern",desc:"Verwandelt dein aktuelles Pokémon sofort in eine andere Art. Werte, Level und Gene bleiben. Im Pokédex erscheint es nach dem nächsten Neustart als aufgezogen.",args:[{t:"species"}],build:a=>"SPEC "+a[0],persist:true},
+  {id:"lvl",label:"Level setzen",desc:"Setzt das Alter so, dass das Pokémon genau dieses Level hat (1 Level = 60 Minuten Alter). Entwicklungen prüft das Spiel danach selbst.",args:[{t:"num",min:1,max:100,def:10}],build:a=>"LVL "+(a[0]-1),persist:true},
+  {id:"nick",label:"Spitzname setzen",desc:"Max. 11 Zeichen, nur einfache Buchstaben/Ziffern. Speichert sofort.",args:[{t:"text",max:11}],build:a=>"NICK "+a[0].replace(/[^\x20-\x7E]/g,"")},
+  {id:"shiny",label:"Shiny an/aus",desc:"Schaltet Shiny für das aktuelle Pokémon um.",cmd:"SHINY",persist:true},
+  {id:"hatch",label:"Ei sofort schlüpfen lassen",desc:"Tippt das Ei dreimal an. Wirkt nur, wenn gerade ein Ei da ist.",cmd:"HATCH"},
+ ]},
+ {sec:"Aktivität & Pflege",items:[
+  {id:"walk",label:"Schritte hinzufügen",desc:"Zählt Schritte, als wärst du gelaufen – inkl. Schrittziele, Belohnungen, Freude und Bindung.",args:[{t:"num",min:1,max:65535,def:1000}],build:a=>"WALK "+a[0]},
+  {id:"shake",label:"Schütteln",desc:"Wie einmal Schütteln (max. 8× pro Tag, kurze Pause dazwischen).",cmd:"SHAKE"},
+  {id:"careday",label:"Gepflegten Tag simulieren",desc:"Stellt die Spiel-Uhr um +1 Tag vor und streichelt einmal → Tagesserie +1, Bindung +1. Die Uhr geht danach einen Tag vor; stell sie anschließend mit „Uhr auf PC-Zeit stellen“ zurück.",cmd:"CAREDAY",persist:true,confirm:"Uhr um einen Tag vorstellen und einen gepflegten Tag simulieren?"},
+ ]},
+ {sec:"Ende des Durchgangs",items:[
+  {id:"bye",label:"Abschied erzwingen",desc:"Startet sofort den Abschied, auch wenn das Pokémon noch nicht bereit ist. Danach kommt ein neues Ei mit den besten Chancen (siehe Save-Tab → „Nächstes Ei“).",cmd:"BYE",danger:true,confirm:"Dein aktuelles Pokémon verabschiedet sich und ist danach weg. Wirklich?"},
+  {id:"run",label:"Weglaufen lassen",desc:"Das Pokémon läuft sofort weg. Strafe: das nächste Ei ist garantiert häufig.",cmd:"RUN",danger:true,confirm:"Dein Pokémon läuft weg und ist danach weg. Wirklich?"},
+  {id:"abandon",label:"„Bereit zum Weglaufen“",desc:"Setzt alle Werte auf 0, sodass am Gerät der Weglaufen-Knopf erscheint. Einmal pflegen rettet es wieder.",cmd:"ABANDON",danger:true,confirm:"Alle Werte auf 0 setzen?"},
+ ]},
+ {sec:"Infos & Diagnose",items:[
+  {id:"reg",label:"Pokédex (aufgezogen) anzeigen",cmd:"REG",show:l=>{const m=/pokedex (\d+)\/\d+:(.*)/.exec(l.join(" "));return m?m[1]+" aufgezogen: "+m[2].trim().split(/\s+/).filter(Boolean).map(n=>dexName(+n)).join(", "):l.join("\n");}},
+  {id:"eggs",label:"20 Ei-Würfe simulieren",desc:"Zeigt, was mit den aktuellen Werten aus dem nächsten Ei kommen könnte. Ändert nichts.",cmd:"EGGS",show:l=>{const r=["Entw.","häufig","selten","legendär"];const out=[];for(const t of l.join(" ").split(/\s+/)){const m=/^(\d+):.*\(r(\d)\)$/.exec(t);if(m)out.push(dexName(+m[1])+" ("+r[+m[2]]+")");}return out.join("\n");}},
+  {id:"steps",label:"Schrittzähler",cmd:"STEPS"},
+  {id:"health",label:"System",desc:"Laufzeit, freier Speicher, SD-Karte.",cmd:"HEALTH"},
+  {id:"imu",label:"Bewegungssensor",cmd:"IMU"},
+  {id:"perf",label:"Leistung",cmd:"PERF"},
+  {id:"ls",label:"Sprites auf SD-Karte",desc:"Listet /mons auf der SD-Karte (kann lang sein).",cmd:"LS",show:l=>l.length+" Dateien\n"+l.slice(0,40).join("\n")+(l.length>40?"\n…":""),ms:20000},
+  {id:"gal",label:"Galerie am Gerät öffnen/schließen",cmd:"GAL"},
+  {id:"beep",label:"Ton testen",cmd:"BEEP"},
+ ]},
+ {sec:"Nur Test-Firmware",test:true,items:[
+  {id:"caughtList",label:"Gefangene anzeigen",cmd:"CAUGHT",show:l=>{const m=/caught (\d+)\/\d+:(.*)/.exec(l.join(" "));return m?m[1]+" gefangen: "+m[2].trim().split(/\s+/).filter(Boolean).map(n=>dexName(+n)).join(", "):l.join("\n");}},
+  {id:"caught",label:"Als gefangen eintragen",args:[{t:"species"}],build:a=>"CAUGHT "+a[0]},
+  {id:"testmon",label:"Test-Pokémon setzen",desc:"Wie „Pokémon ändern“, mit Shiny-Wahl.",args:[{t:"species"},{t:"num",min:0,max:1,def:0,ph:"Shiny 0/1"}],build:a=>`TESTMON ${a[0]} ${a[1]}`,persist:true},
+  {id:"testevo",label:"Entwicklung testen",desc:"Setzt Pokémon A kurz vor die Entwicklung zu B. Verstellt dabei Uhr und Werte!",args:[{t:"species"},{t:"species"}],build:a=>`TESTEVO ${a[0]} ${a[1]}`,confirm:"Setzt Uhr, Werte und Alter für einen Entwicklungstest um. Weiter?"},
+  {id:"battle",label:"Kampf starten",desc:"Gegen eine bestimmte Art (Shiny 0/1).",args:[{t:"species"},{t:"num",min:0,max:1,def:0,ph:"Shiny 0/1"}],build:a=>`BATTLE ${a[0]} ${a[1]}`},
+  {id:"battleR",label:"Zufälligen Kampf starten",cmd:"BATTLE"},
+ ]},
+ {sec:"Gefahrenzone",items:[
+  {id:"wipe",label:"Spielstand komplett löschen",desc:"Löscht alles (Pokémon, Pokédex, Medaillen, Items …) und startet neu mit der Starter-Wahl. Vorher wird automatisch ein Backup heruntergeladen.",cmd:"WIPE",danger:true,wipe:true},
+ ]},
+];
+function argHtml(a,i){
+  switch(a.t){
+    case"species":return `<select data-arg="${i}">${speciesOptions(false)}</select>`;
+    case"num":return `<input type="number" data-arg="${i}" min="${a.min}" max="${a.max}" value="${a.def??a.min}" placeholder="${a.ph||""}" style="width:${a.max>999?110:80}px" title="${a.ph||""}">`;
+    case"text":return `<input type="text" data-arg="${i}" maxlength="${a.max}" style="width:140px">`;
+    case"datetime":return `<input type="datetime-local" data-arg="${i}" value="${epochToLocal(pcBoardEpoch())}">`;
+  }
+}
+function buildCmds(){
+  const root=$("cmds");
+  for(const s of CMDS){
+    const sec=document.createElement("section");if(s.test){sec.className="test";sec.dataset.test="1";}
+    sec.innerHTML=`<h2>${s.sec}</h2>`+(s.test?`<p class="note testnote">Diese Befehle gibt es nur in Test-Builds der Firmware (Version mit „local“ im Namen). Erst „Status lesen“, dann siehst du, ob deine Firmware sie kann.</p>`:"");
+    for(const c of s.items){
+      const row=document.createElement("div");row.className="cmd"+(c.danger?" danger":"");
+      const shown=c.cmd||(c.build?c.build((c.args||[]).map(a=>a.t==="species"?1:a.def??"…")).split(" ")[0]:"");
+      row.innerHTML=`<div class="d"><b>${c.label}</b><code>${shown}</code>${c.desc?`<p>${c.desc}</p>`:""}${c.info?`<p data-clockinfo></p>`:""}</div>
+        <div class="a">${(c.args||[]).map(argHtml).join("")}<button data-run class="${c.danger?"danger":""}" disabled>Ausführen</button></div><pre class="out hidden"></pre>`;
+      if(c.args)c.args.forEach((a,i)=>{if(a.t==="species"){const sel=row.querySelector(`[data-arg="${i}"]`);sel.value="116";}});
+      row.querySelector("[data-run]").onclick=()=>runCmd(c,row);
+      sec.appendChild(row);
+    }
+    root.appendChild(sec);
+  }
+}
+async function runCmd(c,row){
+  const out=row.querySelector(".out");
+  const args=[...row.querySelectorAll("[data-arg]")].map(e=>e.value);
+  for(const [i,a] of (c.args||[]).entries()){
+    if(a.t==="num"){const v=+args[i];if(!Number.isInteger(v)||v<a.min||v>a.max){alert(`Bitte eine Zahl von ${a.min} bis ${a.max} eingeben.`);return;}}
+    if(a.t==="text"&&!args[i].trim()){alert("Bitte einen Text eingeben.");return;}
+    if(a.t==="datetime"&&!args[i]){alert("Bitte Datum und Uhrzeit wählen.");return;}
+  }
+  const cmd=c.build?c.build(args):c.cmd;
+  try{
+    if(c.wipe){
+      if(!confirm("Wirklich den KOMPLETTEN Spielstand löschen?"))return;
+      if(prompt('Zur Sicherheit bitte LÖSCHEN eintippen:')!=="LÖSCHEN")return;
+      term("Backup vor dem Löschen…","ok");await backupToDisk("vor-wipe");
+    }else if(c.confirm&&!confirm(c.confirm))return;
+    const lines=await command(cmd,c.ms||5000);
+    let txt=c.show?c.show(lines):lines.join("\n");
+    if(c.persist){await persistNow().then(()=>{txt+=(txt?"\n":"")+"✓ dauerhaft gespeichert";}).catch(e=>{txt+=(txt?"\n":"")+"⚠ "+e.message+" Das Board speichert von selbst in ein paar Minuten.";});}
+    out.textContent=(txt||"✓ erledigt");out.classList.remove("hidden");
+    if(c.wipe){term("Board startet neu…","ok");await disconnect();return;}
+    if(!c.show&&c.id!=="beep"&&c.id!=="gal")refreshStatus().catch(()=>{});
+  }catch(e){out.textContent="Fehler: "+e.message;out.classList.remove("hidden");}
+}
+buildCmds();
+
+// ---------- Terminal-Eingabe ----------
+const hist=[];let hi=0;
+$("termForm").onsubmit=async e=>{
+  e.preventDefault();const v=$("termIn").value.trim();if(!v)return;
+  if(/^(WIPE|SAVEPUT|PUT )/i.test(v)){alert("Diesen Befehl bitte über die Knöpfe ausführen (Sicherheitsabfrage/Backup).");return;}
+  hist.push(v);hi=hist.length;$("termIn").value="";
+  try{await command(v,8000);}catch(err){term("⚠ "+err.message+(/antwortet/.test(err.message)?" (unbekannter Befehl?)":""),"err");}
+  $("termIn").focus();
+};
+$("termIn").onkeydown=e=>{
+  if(e.key==="ArrowUp"&&hi>0){hi--;$("termIn").value=hist[hi];e.preventDefault();}
+  else if(e.key==="ArrowDown"){hi=Math.min(hist.length,hi+1);$("termIn").value=hist[hi]||"";e.preventDefault();}
+};
+updateSerialUi();
+</script>
+</body>
+</html>
